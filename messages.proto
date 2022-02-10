@@ -1,0 +1,39 @@
+syntax = "proto2";
+
+message SetLight {
+    required int32 id = 1;
+    required int32 range = 2;
+    /* start color */
+    required int32 start_color = 3;
+    /* end color */
+    required int32 end_color = 4;
+    /* attack, hold, decay, sustain */
+    required int64 ahds = 5;
+    /* gradient fields */
+    required int32 start_color_alt = 6;
+    required int32 end_color_alt = 7;
+}
+
+message CurrentTime {
+    required int64 timestamp = 1;
+}
+
+message Request {
+    oneof payload {
+        SetLight set_light = 1;
+        bool current_time_request = 2;
+    }
+}
+
+message Log {
+    required int32 id = 1;
+    required string description = 2;
+    required bool is_error = 3;
+}
+
+message Response {
+    oneof payload {
+        CurrentTime current_time = 1;
+        Log log = 2;
+    }
+}
