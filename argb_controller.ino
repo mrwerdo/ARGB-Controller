@@ -74,21 +74,6 @@ void setup() {
 
     FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(animation_controller.get_leds(), animation_controller.leds_count).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
-
-    // fill_rainbow(animation_controller.get_leds(), animation_controller.leds_count, 0, 7);
-    Light &light = animation_controller[0];
-    light.enabled = true;
-    light.start = 0;
-    light.end = 16;
-    light.start_color_A = CRGB(255, 0, 0);
-    light.start_color_B = CRGB(255, 0, 0);
-    light.end_color_A = CRGB(0, 0, 255);
-    light.end_color_B = CRGB(0, 0, 255);
-    light.attack = 500;
-    light.hold = 500;
-    light.decay = 500;
-    light.sustain = 500;
-    light.id = 0;
 }
 
 void controller_update()
@@ -100,7 +85,6 @@ void controller_update()
     previous_time = current_time;
     FastLED.show();
     animation_controller.update_frames_per_second_statistic(current_time);
-    FastLED.delay(1000/FRAMES_PER_SECOND);
 }
 
 void loop() {

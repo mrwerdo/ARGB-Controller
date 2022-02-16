@@ -9,7 +9,6 @@ template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
 class AnimationController {
 private:
     Light lights[MAX_LIGHTS];
-    uint8_t number_of_lights = 0;
 
     uint16_t frames = 0;
     uint16_t fps = 0;
@@ -18,7 +17,9 @@ private:
     CRGB leds[MAX_LEDS];
 
 public:
+    const uint16_t number_of_lights = MAX_LIGHTS;
     const uint16_t leds_count = MAX_LEDS;
+
     CRGB* get_leds() const {
         return leds;
     }

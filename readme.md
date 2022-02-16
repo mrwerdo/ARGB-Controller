@@ -14,3 +14,4 @@ Dependencies:
 - [AceCRC](https://github.com/bxparks/AceCRC)
 - [PacketSerial](https://github.com/bakercp/PacketSerial)
 - [nanopb](https://github.com/nanopb/nanopb)
+- [FastLED](https://github.com/fastled/fastled)
