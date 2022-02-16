@@ -19,11 +19,12 @@ FASTLED_USING_NAMESPACE
 #define DATA_PIN 3
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
-#define MAXIMUM_NUMBER_OF_LEDS 128
+#define MAXIMUM_NUMBER_OF_LEDS 17
 #define BAUD_RATE 9600
 #define STARTUP_DELAY 1000
 #define BRIGHTNESS 100
 #define STATUS_LED 13
+#define FRAMES_PER_SECOND 120
 
 static AnimationController<4, MAXIMUM_NUMBER_OF_LEDS> animation_controller;
 static Connection<64, BAUD_RATE, STATUS_LED> connection;
@@ -47,21 +48,22 @@ void setup() {
                 if (animation_controller.is_valid_light(set_light.id)) {
                     Light &light = animation_controller[set_light.id];
                     update_light(light, set_light);
-                    connection.log(LogCode::set_light, "sucessfully updated light");
+                    light.enabled = true;
+                    connection.log(LogCode::set_light, F("sucessfully updated light"));
+                } else {
+                    connection.error(ErrorCode::no_callback_assigned, F("invalid light"));
                 }
-                break;
+                return;
             }
         case Request_current_time_request_tag: {
                 Response response;
                 response.payload.current_time.timestamp = millis();
                 response.which_payload = Response_current_time_tag;
                 connection.send(response);
-                break;
+                return;
             }
-        default:
-            connection.error(ErrorCode::unknown_message, F("unknown protobuf message"));
-            break;
         }
+        connection.error(ErrorCode::unknown_message, F("unknown protobuf message"));
     });
 
     // The board's bootloader intercepts serial messages until a timeout expires.
@@ -72,6 +74,21 @@ void setup() {
 
     FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(animation_controller.get_leds(), animation_controller.leds_count).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
+
+    // fill_rainbow(animation_controller.get_leds(), animation_controller.leds_count, 0, 7);
+    Light &light = animation_controller[0];
+    light.enabled = true;
+    light.start = 0;
+    light.end = 16;
+    light.start_color_A = CRGB(255, 0, 0);
+    light.start_color_B = CRGB(255, 0, 0);
+    light.end_color_A = CRGB(0, 0, 255);
+    light.end_color_B = CRGB(0, 0, 255);
+    light.attack = 500;
+    light.hold = 500;
+    light.decay = 500;
+    light.sustain = 500;
+    light.id = 0;
 }
 
 void controller_update()
@@ -83,6 +100,7 @@ void controller_update()
     previous_time = current_time;
     FastLED.show();
     animation_controller.update_frames_per_second_statistic(current_time);
+    FastLED.delay(1000/FRAMES_PER_SECOND);
 }
 
 void loop() {

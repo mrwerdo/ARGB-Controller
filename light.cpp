@@ -42,6 +42,12 @@ void Light::update(const uint32_t& dt)
         set_leds(0);
         state = ahds::sustain;
         this->t = t;
+    } else {
+        // Technically, this is an error.
+        current_time = 0;
+        state = ahds::attack;
+        set_leds(0);
+        log();
     }
 
     previous_time = current_time;

@@ -51,6 +51,7 @@ public:
         for (size_t i = 0; i < min(message.length(), 64); i += 1) {
             response.payload.log.description[i] = message[i];
         }
+        response.payload.log.description[min(message.length(), 63)] = 0;
         this->send(response);
 
         digitalWrite(STATUS_LED, HIGH);
@@ -83,7 +84,8 @@ public:
         pb_istream_t stream = pb_istream_from_buffer(buffer, size - 4);
         Request message;
         if (!pb_decode(&stream, Request_fields, &message)) {
-            error(ErrorCode::protobuf_decode, F("failed to decode protobuf message"));
+            const char* errorMsg = PB_GET_ERROR(&stream);
+            error(ErrorCode::protobuf_decode, errorMsg);
             return;
         }
 
@@ -121,12 +123,28 @@ public:
 
     void log(LogCode code, String msg) {
         Response response;
+        response.which_payload = Response_log_tag;
         response.payload.log.id = code;
         response.payload.log.is_error = false;
-        for (size_t i = 0; i < msg.length(); i += 1) {
-            ready.payload.log.description[i] = msg[i];
+        for (size_t i = 0; i < min(msg.length(), 64); i += 1) {
+            response.payload.log.description[i] = msg[i];
         }
-        connection.send(ready);
+        response.payload.log.description[min(msg.length(), 63)] = 0;
+        this->send(response);
+    }
+
+    void log(LogCode code, const char *msg) {
+        Response response;
+        response.which_payload = Response_log_tag;
+        response.payload.log.id = code;
+        response.payload.log.is_error = false;
+        for (size_t i = 0; i < 64; i += 1) {
+            response.payload.log.description[i] = msg[i];
+            if (msg[i] == 0) {
+                break;
+            }
+        }
+        this->send(response);
     }
 
     void update() {
