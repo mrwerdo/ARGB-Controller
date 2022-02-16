@@ -94,18 +94,7 @@ class Connection:
         self.send(data)
 
 
-connection = Connection('/dev/cu.usbmodem14201')
-
-# with connection:
-#     print(connection.receiveMessage())
-#     ct = Request()
-#     ct.current_time_request = True
-#     for _ in range(5):
-#         connection.sendMessage(ct)
-#         try:
-#             print(connection.receiveMessage())
-#         except Exception as error:
-#             print(error)
+connection = Connection('/dev/ttyACM0')
 
 def pack_rgb(v):
     a, b, c = v
@@ -129,16 +118,14 @@ def set_light_message(index, start, end, start_color, end_color, ahds, start_col
     message.ahds = pack_ahds(ahds)
     return request
 
-m = set_light_message(
-    index=0,
-    start=0,
-    end=12,
-    start_color=(255, 255, 255),
-    end_color=(255, 255, 255),
-    ahds=(500, 1000, 1000, 500),
-)
-
-with connection:
-    print(connection.receiveMessage())
+def light(**kwargs):
+    print('updating light...')
+    m = set_light_message(**kwargs)
     connection.sendMessage(m)
     print(connection.receiveMessage())
+
+with connection:
+    light(index=0, start=0, end=7, start_color=(255, 255, 255), end_color=(0, 255, 0), ahds=(500, 1000, 1000, 500))
+    light(index=1, start=8, end=16, start_color=(0, 255, 0), end_color=(255, 0, 255), ahds=(500, 1000, 1000, 500))
+    sleep(10)
+    light(index=1, start=0, end=16, start_color=(255, 0, 0), end_color=(0, 0, 255), ahds=(500, 1000, 1000, 500))
