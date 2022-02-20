@@ -44,10 +44,7 @@ void setup() {
         switch (message.which_payload) {
         case Request_set_light_tag: {
                 SetLight set_light = message.payload.set_light;
-                if (animation_controller.is_valid_light(set_light.id)) {
-                    Light &light = animation_controller[set_light.id];
-                    update_light(light, set_light);
-                    light.enabled = true;
+                if (animation_controller.update_command(set_light)) {
                     connection.log(LogCode::set_light, F("sucessfully updated light"));
                 } else {
                     connection.error(ErrorCode::no_callback_assigned, F("invalid light"));
@@ -89,19 +86,4 @@ void controller_update()
 void loop() {
     connection.update();
     controller_update();
-}
-
-void update_light(Light &light, const SetLight &set_light) {
-    light.start = set_light.range >> 16;
-    light.end = set_light.range & 0xFFFF;
-
-    light.attack = (set_light.ahds >> 48) & 0xFFFF;
-    light.hold = (set_light.ahds >> 32) & 0xFFFF;
-    light.decay = (set_light.ahds >> 16) & 0xFFFF;
-    light.sustain = (set_light.ahds >> 8) & 0xFFFF;
-
-    light.start_color_A.setColorCode(set_light.start_color);
-    light.start_color_B.setColorCode(set_light.start_color_alt);
-    light.end_color_A.setColorCode(set_light.end_color);
-    light.end_color_B.setColorCode(set_light.end_color_alt);
 }

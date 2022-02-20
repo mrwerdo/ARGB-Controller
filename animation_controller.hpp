@@ -4,6 +4,7 @@
 #include <FastLED.h>
 #include "light.h"
 #include "log.hpp"
+#include "messages.pb.h"
 
 template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
 class AnimationController {
@@ -34,6 +35,8 @@ public:
     void update_frames_per_second_statistic(unsigned long current_time);
 
     inline boolean is_valid_light(uint8_t id) { return id < MAX_LIGHTS; }
+
+    boolean update_command(SetLight &set_light);
 
     Light& operator[](uint8_t index);
 
@@ -74,6 +77,43 @@ void AnimationController<MAX_LIGHTS, MAX_LEDS>::update(const uint32_t& dt)
     for (int i = 0; i < number_of_lights; i += 1) {
         lights[i].update(dt);
     }
+}
+
+template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
+boolean AnimationController<MAX_LIGHTS, MAX_LEDS>::update_command(SetLight &set_light)
+{
+    if (!is_valid_light(set_light.id)) {
+        return false;
+    }
+
+    uint16_t start = set_light.range >> 16;
+    uint16_t end = set_light.range & 0xFFFF;
+    if (start > end) {
+        start = set_light.range & 0xFFFF;
+        end = set_light.range >> 16;
+    }
+
+    if (start >= this->leds_count || end > this->leds_count) {
+        return false;
+    }
+
+    Light &light = this->operator[](set_light.id);
+    light.start = start;
+    light.end = end;
+
+    light.enabled = light.start != light.end;
+
+    light.attack = (set_light.ahds >> 48) & 0xFFFF;
+    light.hold = (set_light.ahds >> 32) & 0xFFFF;
+    light.decay = (set_light.ahds >> 16) & 0xFFFF;
+    light.sustain = (set_light.ahds >> 8) & 0xFFFF;
+
+    light.start_color_A.setColorCode(set_light.start_color);
+    light.start_color_B.setColorCode(set_light.start_color_alt);
+    light.end_color_A.setColorCode(set_light.end_color);
+    light.end_color_B.setColorCode(set_light.end_color_alt);
+
+    return true;
 }
 
 #endif

@@ -42,6 +42,11 @@ void Light::update(const uint32_t& dt)
         set_leds(0);
         state = ahds::sustain;
         this->t = t;
+    } else {
+        // Occurs when attack, hold, decay, and sustain are all zero.
+        set_leds(0);
+        state = ahds::attack;
+        this->t = 0;
     }
 
     previous_time = current_time;
