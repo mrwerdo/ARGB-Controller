@@ -19,7 +19,7 @@ FASTLED_USING_NAMESPACE
 #define DATA_PIN 3
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
-#define MAXIMUM_NUMBER_OF_LEDS 12
+#define MAXIMUM_NUMBER_OF_LEDS 20
 #define BAUD_RATE 9600
 #define STARTUP_DELAY 1000
 #define BRIGHTNESS 100
@@ -29,11 +29,22 @@ FASTLED_USING_NAMESPACE
 static AnimationController<4, MAXIMUM_NUMBER_OF_LEDS> animation_controller;
 static Connection<64, BAUD_RATE, STATUS_LED> connection;
 
-void update_light(Light &light, const SetLight &set_light);
+template<uint8_t PIN, uint8_t OFFSET, uint8_t SIZE>
+CLEDController& addLeds() {
+    return FastLED.addLeds<LED_TYPE, PIN, COLOR_ORDER>(animation_controller.get_leds(), OFFSET, SIZE);
+}
 
 void setup() {
     pinMode(STATUS_LED, OUTPUT);
     digitalWrite(STATUS_LED, LOW);
+
+    // The following funciton accepts PIN, OFFSET, and SIZE.
+    // Offset is the accumulation of the size parameter starting at zero (that is, OFFSET+SIZE = the
+    // next OFFSET). The MAXIMUM_NUMBER_OF_LEDS should be at least the sum of the SIZE parameters.
+    addLeds<9, 0, 8>().setCorrection(TypicalLEDStrip);
+    addLeds<10, 8, 6>().setCorrection(TypicalLEDStrip);
+    addLeds<11, 14, 6>().setCorrection(TypicalLEDStrip);
+    FastLED.setBrightness(BRIGHTNESS);
 
     connection.initialize([](const uint8_t* buffer, size_t size) {
         // todo: modify library so that this goes away.
@@ -67,9 +78,6 @@ void setup() {
     delay(STARTUP_DELAY);
 
     connection.log(LogCode::ready, F("ARGB Controller Ready"));
-
-    FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(animation_controller.get_leds(), animation_controller.leds_count).setCorrection(TypicalLEDStrip);
-    FastLED.setBrightness(BRIGHTNESS);
 }
 
 void controller_update()
