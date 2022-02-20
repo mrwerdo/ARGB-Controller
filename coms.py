@@ -20,6 +20,7 @@ class Connection:
             xor_out=0xffffffff,
             reflect_out=True
         )
+        self.logging_enabled = False
     
     def __enter__(self):
         self.serialPort.__enter__()
@@ -27,6 +28,10 @@ class Connection:
 
     def __exit__(self, *args):
         self.serialPort.__exit__(*args)
+    
+    def log(self, *args, **kwargs):
+        if self.logging_enabled:
+            print(*args, **kwargs)
 
     def receiveMessage(self):
         data = self.receive()
@@ -46,6 +51,7 @@ class Connection:
                 else:
                     buffer.append(byte)
         if len(buffer) <= 4:
+            print('received too short a buffer')
             return None
         else:
             try:
@@ -60,7 +66,7 @@ class Connection:
                 ])
                 if received_crc != crc:
                     print(f'warning: received crc: {received_crc}, expected crc: {crc}')
-                print(dedent(f'''
+                self.log(dedent(f'''
                 Received Message:
                     length: {len(buffer)}
                     buffer: {buffer.hex('-')}
@@ -69,15 +75,16 @@ class Connection:
                     calculated crc: {crc.hex('-')}
                 '''))
                 return msg[:-4]
-            except:
-                pass
+            except Exception as error:
+                print(error)
+                return None
 
     def send(self, message):
         checksum = self.crc.bit_by_bit(message).to_bytes(4, byteorder='little')
         data = bytearray(message)
         data.extend(checksum)
         encoded_data = encode(data)
-        print(dedent(f'''
+        self.log(dedent(f'''
         Sending Message:
             length: {len(encoded_data)}
             buffer: {encoded_data.hex('-')}
@@ -87,14 +94,14 @@ class Connection:
         self.serialPort.write(encoded_data)
         self.serialPort.write([0])
         self.serialPort.flush()
-        print('done')
+        self.log('done')
 
     def sendMessage(self, msg):
         data = msg.SerializeToString()
         self.send(data)
 
 
-connection = Connection('/dev/ttyACM0')
+connection = Connection('/dev/cu.usbmodem144301')
 
 def pack_rgb(v):
     a, b, c = v
@@ -125,7 +132,10 @@ def light(**kwargs):
     print(connection.receiveMessage())
 
 with connection:
-    light(index=0, start=0, end=7, start_color=(255, 255, 255), end_color=(0, 255, 0), ahds=(500, 1000, 1000, 500))
-    light(index=1, start=8, end=16, start_color=(0, 255, 0), end_color=(255, 0, 255), ahds=(500, 1000, 1000, 500))
-    sleep(10)
-    light(index=1, start=0, end=16, start_color=(255, 0, 0), end_color=(0, 0, 255), ahds=(500, 1000, 1000, 500))
+    sleep(1)
+    print(connection.receiveMessage())
+    for x in range(0, 20):
+        print(f'trying index: {x}')
+        light(index=0, start=x, end=x+1, start_color=(255, 0, 0), end_color=(255, 0, 0), ahds=(10, 10, 10, 10))
+        sleep(1)
+        light(index=0, start=x, end=x+1, start_color=(0, 0, 0), end_color=(0, 0, 0), ahds=(10, 10, 10, 10))
