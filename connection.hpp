@@ -32,16 +32,6 @@ private:
     typedef void (*PacketHandlerFunction)(const Request &message);
     PacketHandlerFunction callback = nullptr;
 
-    /* buffer should have length == size + 4 */
-    void append_checksum(uint8_t* buffer, size_t size) {
-        crc_t crc = crc_calculate(buffer, size);
-        uint8_t* crc_ptr = (uint8_t*)&crc;
-        buffer[size+0] = crc_ptr[0];
-        buffer[size+1] = crc_ptr[1];
-        buffer[size+2] = crc_ptr[2];
-        buffer[size+3] = crc_ptr[3];
-    }
-
 public:
     void error(ErrorCode code, String message) {
         Response response;
@@ -110,14 +100,19 @@ public:
     }
 
     void send(Response &message) {
-        const size_t size = 80;
-        uint8_t buffer[size+4];
-        pb_ostream_t stream = pb_ostream_from_buffer(buffer, size);
+        const size_t max_encoded_message_size = 80;
+        uint8_t buffer[max_encoded_message_size+4];
+        pb_ostream_t stream = pb_ostream_from_buffer(buffer, max_encoded_message_size);
         if (!pb_encode(&stream, Response_fields, &message)) {
             error(ErrorCode::protobuf_encode, F("failed to encode protobuf message"));
             return;
         }
-        append_checksum(buffer, stream.bytes_written);
+        crc_t crc = crc_calculate(buffer, stream.bytes_written);
+        uint8_t* crc_ptr = (uint8_t*)&crc;
+        buffer[stream.bytes_written+0] = crc_ptr[0];
+        buffer[stream.bytes_written+1] = crc_ptr[1];
+        buffer[stream.bytes_written+2] = crc_ptr[2];
+        buffer[stream.bytes_written+3] = crc_ptr[3];
         packetSerial.send(buffer, stream.bytes_written + 4);
     }
 
@@ -130,20 +125,6 @@ public:
             response.payload.log.description[i] = msg[i];
         }
         response.payload.log.description[min(msg.length(), 63)] = 0;
-        this->send(response);
-    }
-
-    void log(LogCode code, const char *msg) {
-        Response response;
-        response.which_payload = Response_log_tag;
-        response.payload.log.id = code;
-        response.payload.log.is_error = false;
-        for (size_t i = 0; i < 64; i += 1) {
-            response.payload.log.description[i] = msg[i];
-            if (msg[i] == 0) {
-                break;
-            }
-        }
         this->send(response);
     }
 

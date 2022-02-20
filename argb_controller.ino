@@ -29,7 +29,6 @@ FASTLED_USING_NAMESPACE
 static AnimationController<4, MAXIMUM_NUMBER_OF_LEDS> animation_controller;
 static Connection<64, BAUD_RATE, STATUS_LED> connection;
 
-void processMessage(const uint8_t* buffer, size_t size);
 void update_light(Light &light, const SetLight &set_light);
 
 void setup() {
