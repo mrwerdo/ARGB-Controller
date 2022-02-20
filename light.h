@@ -23,6 +23,9 @@ public:
     uint16_t sustain;
 
     CRGB* leds = nullptr;
+
+    void reset();
+
 private:
 
     uint32_t previous_time = 0;

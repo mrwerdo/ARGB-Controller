@@ -103,15 +103,17 @@ boolean AnimationController<MAX_LIGHTS, MAX_LEDS>::update_command(SetLight &set_
 
     light.enabled = light.start != light.end;
 
-    light.attack = (set_light.ahds >> 48) & 0xFFFF;
-    light.hold = (set_light.ahds >> 32) & 0xFFFF;
-    light.decay = (set_light.ahds >> 16) & 0xFFFF;
-    light.sustain = (set_light.ahds >> 8) & 0xFFFF;
+    light.attack = (set_light.ahds >> 24) & 0xFFFF;
+    light.hold = (set_light.ahds >> 16) & 0xFFFF;
+    light.decay = (set_light.ahds >> 8) & 0xFFFF;
+    light.sustain = (set_light.ahds >> 0) & 0xFFFF;
 
     light.start_color_A.setColorCode(set_light.start_color);
     light.start_color_B.setColorCode(set_light.start_color_alt);
     light.end_color_A.setColorCode(set_light.end_color);
     light.end_color_B.setColorCode(set_light.end_color_alt);
+
+    light.reset();
 
     return true;
 }

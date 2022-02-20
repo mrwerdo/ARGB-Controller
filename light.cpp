@@ -72,3 +72,10 @@ void Light::log()
     log("state", state, delim::newline);
     Serial.println(")");
 }
+
+
+void Light::reset() {
+    this->state = ahds::attack;
+    this->t = 0;
+    this->previous_time = 0;
+}

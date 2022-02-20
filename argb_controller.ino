@@ -41,9 +41,9 @@ void setup() {
     // The following funciton accepts PIN, OFFSET, and SIZE.
     // Offset is the accumulation of the size parameter starting at zero (that is, OFFSET+SIZE = the
     // next OFFSET). The MAXIMUM_NUMBER_OF_LEDS should be at least the sum of the SIZE parameters.
-    addLeds<9, 0, 8>().setCorrection(TypicalLEDStrip);
-    addLeds<10, 8, 6>().setCorrection(TypicalLEDStrip);
-    addLeds<11, 14, 6>().setCorrection(TypicalLEDStrip);
+    addLeds<9, 0, 6>().setCorrection(TypicalLEDStrip);
+    addLeds<10, 6, 6>().setCorrection(TypicalLEDStrip);
+    addLeds<11, 12, 8>().setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
 
     connection.initialize([](const uint8_t* buffer, size_t size) {
