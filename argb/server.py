@@ -1,5 +1,6 @@
 from .coms import Connection
 from messages_pb2 import Request
+from time import sleep
 
 def pack_rgb(v):
     a, b, c = v
@@ -11,10 +12,19 @@ def pack_ahds(v):
 
 
 class Server:
-    def __init__(self, device):
+    def __init__(self, device, delegate):
         self.connection = Connection(device)
+        self.delegate = delegate
 
-    def set_light(self, index, start, end, start_color, end_color, ahds, start_color_alt=None, end_color_alt=None):
+    def set_light(self,
+            index,
+            start,
+            end,
+            start_color,
+            end_color,
+            ahds,
+            start_color_alt=None,
+            end_color_alt=None):
         start_color_alt = start_color_alt or start_color
         end_color_alt = end_color_alt or end_color
         request = Request()
@@ -27,3 +37,24 @@ class Server:
         message.end_color_alt = pack_rgb(end_color_alt)
         message.ahds = pack_ahds(ahds)
         self.connection.sendMessage(request)
+
+    def receiveMessage(self):
+        if self.connection.serialPort.in_waiting != 0:
+            return self.connection.receiveMessage()
+        else:
+            return None
+
+    def main(self):
+        with self.connection:
+            while True:
+                msg = self.receiveMessage()
+                if msg is None:
+                    sleep(0.3)
+                    continue
+                if msg.HasField('log') and msg.log.id == 9:
+                    self.delegate.ready(self)
+                    continue
+                should_stop = self.delegate.process(self, msg)
+                if should_stop:
+                    break
+            self.delegate.completed(self)
