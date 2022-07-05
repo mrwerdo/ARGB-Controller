@@ -34,6 +34,54 @@ CLEDController& addLeds() {
     return FastLED.addLeds<LED_TYPE, PIN, COLOR_ORDER>(animation_controller.get_leds(), OFFSET, SIZE);
 }
 
+extern unsigned int __data_start;
+extern unsigned int __data_end;
+extern unsigned int __bss_start;
+extern unsigned int __bss_end;
+extern void *__brkval;
+extern char *__heap_start;
+extern char *__heap_end;
+extern size_t __malloc_margin;
+extern unsigned int *__malloc_start;
+extern unsigned int *__malloc_end;
+
+// this function will return the number of bytes currently free in RAM
+int freemem()
+{
+    int free_memory;
+    if((int)__brkval == 0)
+        free_memory = ((int)&free_memory) - ((int)&__bss_end);
+    else
+        free_memory = ((int)&free_memory) - ((int)__brkval);
+    return free_memory;
+}
+
+static inline size_t stack_size()
+{
+    return RAMEND - SP;
+}
+
+inline uint32_t pack(uint16_t a, uint16_t b)
+{
+    uint32_t result = a;
+    result <<= 16;
+    result |= b;
+    return result;
+}
+
+void sendStackMeasurements(int id)
+{
+    Response response;
+    response.which_payload = Response_stack_measurement_tag;
+    response.payload.stack_measurement.id = id;
+    response.payload.stack_measurement.data = pack(&__data_start, &__data_end);
+    response.payload.stack_measurement.bss = pack(&__bss_start, &__bss_end);
+    response.payload.stack_measurement.heap = pack(__malloc_heap_start, __malloc_heap_end);
+    response.payload.stack_measurement.heap_gap = pack(__brkval, __malloc_margin);
+    response.payload.stack_measurement.stack = pack(SP, RAMEND);
+    connection.send(response);
+}
+
 void setup() {
     pinMode(STATUS_LED, OUTPUT);
     digitalWrite(STATUS_LED, LOW);
@@ -93,5 +141,7 @@ void controller_update()
 
 void loop() {
     connection.update();
-    controller_update();
+    sendStackMeasurements(1);
+    //controller_update();
 }
+

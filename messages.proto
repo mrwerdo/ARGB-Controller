@@ -31,9 +31,19 @@ message Log {
     required bool is_error = 3;
 }
 
+message StackMeasurement {
+    required int32 id = 1;
+    required int32 data = 2;
+    required int32 bss = 3;
+    required int32 heap = 4;
+    required int32 heap_gap = 5;
+    required int32 stack = 6;
+}
+
 message Response {
     oneof payload {
         CurrentTime current_time = 1;
         Log log = 2;
+        StackMeasurement stack_measurement = 3;
     }
 }

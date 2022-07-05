@@ -2,7 +2,7 @@ from serial import Serial
 from cobs.cobs import encode, decode
 from time import sleep
 from pycrc.algorithms import Crc
-from messages_pb2 import *
+from messages_pb2 import Response
 from textwrap import dedent
 
 class Connection:
@@ -35,6 +35,8 @@ class Connection:
 
     def receiveMessage(self):
         data = self.receive()
+        if data is None:
+            return None
         message = Response()
         message.ParseFromString(data)
         return message

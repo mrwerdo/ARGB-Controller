@@ -24,6 +24,8 @@ public:
 
     CRGB* leds = nullptr;
 
+    /* size is approximately 1 + 1 + 2 + 2 + 4 * 3 + 4 * 2 + 2 + 4 + 2 + 1 = 6 + 12 + 8 + 9 = 35 bytes */
+
     void reset();
 
 private:
