@@ -87,6 +87,22 @@ inline uint32_t packIf(uint32_t existing, uint16_t a, uint16_t b)
     return result;
 }
 
+inline uint32_t packIfLessThan(uint32_t existing, uint16_t a, uint16_t b)
+{
+    uint16_t x = existing & 0xFFFF;
+    uint16_t y = (existing >> 16) & 0xFFFF;
+    if (x < a) {
+        a = x;
+    }
+    if (y < b) {
+        b = y;
+    } 
+    uint32_t result = a;
+    result <<= 16;
+    result |= b;
+    return result;
+}
+
 void updateGreatestResponse()
 {
     greatest_response.which_payload = Response_stack_measurement_tag;
@@ -95,11 +111,12 @@ void updateGreatestResponse()
     greatest_response.payload.stack_measurement.bss = packIf(greatest_response.payload.stack_measurement.bss, &__bss_start, &__bss_end);
     greatest_response.payload.stack_measurement.heap = packIf(greatest_response.payload.stack_measurement.heap, __malloc_heap_start, __malloc_heap_end);
     greatest_response.payload.stack_measurement.heap_gap = packIf(greatest_response.payload.stack_measurement.heap_gap,__brkval, __malloc_margin);
-    greatest_response.payload.stack_measurement.stack = packIf(greatest_response.payload.stack_measurement.stack, SP, RAMEND);
+    greatest_response.payload.stack_measurement.stack = packIfLessThan(greatest_response.payload.stack_measurement.stack, SP, RAMEND);
 }
 
 void sendStackMeasurements(int id)
 {
+    // At least 28 bytes
     Response response;
     response.which_payload = Response_stack_measurement_tag;
     response.payload.stack_measurement.id = id;
@@ -114,6 +131,8 @@ void sendStackMeasurements(int id)
 void setup() {
     pinMode(STATUS_LED, OUTPUT);
     digitalWrite(STATUS_LED, LOW);
+
+    greatest_response.payload.stack_measurement.stack = 0xFFFFFFFF;
 
     // The following funciton accepts PIN, OFFSET, and SIZE.
     // Offset is the accumulation of the size parameter starting at zero (that is, OFFSET+SIZE = the
@@ -133,7 +152,7 @@ void setup() {
     connection.set_callback([](const Request &message) {
         switch (message.which_payload) {
         case Request_set_light_tag: {
-//                sendStackMeasurements(3);
+                //sendStackMeasurements(3);
                 updateGreatestResponse();
                 SetLight set_light = message.payload.set_light;
                 if (animation_controller.update_command(set_light)) {
@@ -175,9 +194,21 @@ void controller_update()
 }
 
 void loop() {
+    /*
+    I'm going to guess the problem is that buffers are being overwritten during the middle of
+    a write. This occurs because the write command has not finished sending the buffers?
+
+    Another theory is that the 356 bytes are being used by the stack, which is possible. I was
+    trying to prove this theory but collecting evidence is elusive. I believe the necessary
+    functions for sending the measurements take up too much stack and also cannot be sent.
+
+    The board does not continue sending stack measurements, so I think it's safe to say it cannot
+    be the first theory. Another observation is that measuring the stack just before a packet is 
+    processed seems to prevent any other messages from being sent.
+    */
     connection.update();
     connection.send(greatest_response);
-    sendStackMeasurements(1);
+    //sendStackMeasurements(1);
     //controller_update();
 }
 

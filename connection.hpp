@@ -8,6 +8,7 @@
 #include "messages.pb.h"
 
 void sendStackMeasurements(int id);
+void updateGreatestResponse();
 
 using namespace ace_crc::crc32_nibble;
 
@@ -54,7 +55,7 @@ public:
     }
 
     void processPacket(const uint8_t* buffer, size_t size) {
-        sendStackMeasurements(5);
+        //updateGreatestResponse();
         if (size <= 4) {
             // At least the CRC should be there, plus something else.
             error(ErrorCode::too_short, F("message"));

@@ -33,6 +33,9 @@ class DebugMonitor:
 
     def ready(self, server):
         self.log('ready')
+        self.send_message(server)
+
+    def send_message(self, server):
         server.set_light(
             index=0,
             start=0,
@@ -66,12 +69,15 @@ class DebugMonitor:
         if msg.HasField('stack_measurement'):
             #print('.')
             self.stack_measurements.append(StackMeasurement(msg))
+        elif msg.HasField('log') and msg.log.id == 2:
+            self.log('resending message')
+            self.send_message(server)
         else:
             print(msg)
         return len(self.stack_measurements) >= 10
 
     def completed(self, server):
-        print('completed')
+        self.log('completed')
         results = pd.json_normalize([obj.todict() for obj in self.stack_measurements])
         print(results.groupby('id').agg(['min', ('mode', lambda x: x.mode()), 'max']).transpose().to_string())
         for line in server.connection.received.hex('-').split('00'):
