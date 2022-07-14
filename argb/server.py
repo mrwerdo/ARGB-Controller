@@ -47,14 +47,17 @@ class Server:
     def main(self):
         with self.connection:
             while True:
-                msg = self.receiveMessage()
-                if msg is None:
-                    sleep(0.3)
-                    continue
-                if msg.HasField('log') and msg.log.id == 9:
-                    self.delegate.ready(self)
-                    continue
-                should_stop = self.delegate.process(self, msg)
-                if should_stop:
+                try:
+                    msg = self.receiveMessage()
+                    if msg is None:
+                        sleep(0.3)
+                        continue
+                    if msg.HasField('log') and msg.log.id == 9:
+                        self.delegate.ready(self)
+                        continue
+                    should_stop = self.delegate.process(self, msg)
+                    if should_stop:
+                        break
+                except KeyboardInterrupt:
                     break
             self.delegate.completed(self)

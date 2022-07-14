@@ -7,6 +7,8 @@
 #include <AceCRC.h>
 #include "messages.pb.h"
 
+void sendStackMeasurements(int id);
+
 using namespace ace_crc::crc32_nibble;
 
 enum ErrorCode {
@@ -43,6 +45,7 @@ public:
         }
         response.payload.log.description[min(message.length(), 63)] = 0;
         this->send(response);
+        sendStackMeasurements(7);
 
         digitalWrite(STATUS_LED, HIGH);
         delay(200);
@@ -51,9 +54,10 @@ public:
     }
 
     void processPacket(const uint8_t* buffer, size_t size) {
+        sendStackMeasurements(5);
         if (size <= 4) {
             // At least the CRC should be there, plus something else.
-            error(ErrorCode::too_short, F("message contained less than 5 bytes"));
+            error(ErrorCode::too_short, F("message"));
             return;
         }
 
@@ -67,7 +71,7 @@ public:
 
         crc_t crc = crc_calculate(buffer, size-4);
         if (received_crc != crc) {
-            error(ErrorCode::invalid_crc, F("received crc different to calculated crc"));
+            error(ErrorCode::invalid_crc, F("received"));
             return;
         }
 
@@ -82,7 +86,7 @@ public:
         if (this->callback) {
             this->callback(message);
         } else {
-            error(ErrorCode::no_callback_assigned, F("no callback assigned to (any) process messages"));
+            error(ErrorCode::no_callback_assigned, F("no"));
         }
     }
 
@@ -104,7 +108,7 @@ public:
         uint8_t buffer[max_encoded_message_size+4];
         pb_ostream_t stream = pb_ostream_from_buffer(buffer, max_encoded_message_size);
         if (!pb_encode(&stream, Response_fields, &message)) {
-            error(ErrorCode::protobuf_encode, F("failed to encode protobuf message"));
+            error(ErrorCode::protobuf_encode, F("failed"));
             return;
         }
         crc_t crc = crc_calculate(buffer, stream.bytes_written);
@@ -113,6 +117,16 @@ public:
         buffer[stream.bytes_written+1] = crc_ptr[1];
         buffer[stream.bytes_written+2] = crc_ptr[2];
         buffer[stream.bytes_written+3] = crc_ptr[3];
+        while (Serial.availableForWrite() < 8) {
+            this->update();
+        }
+        Serial.write(0);
+        Serial.write(0);
+        Serial.write(0);
+        Serial.write(0);
+        while (Serial.availableForWrite() < stream.bytes_written + 4) {
+            this->update();
+        }
         packetSerial.send(buffer, stream.bytes_written + 4);
     }
 
@@ -126,12 +140,13 @@ public:
         }
         response.payload.log.description[min(msg.length(), 63)] = 0;
         this->send(response);
+        sendStackMeasurements(6);
     }
 
     void update() {
         packetSerial.update();
         if (packetSerial.overflow()) {
-            error(ErrorCode::overflow, F("buffer overflow detected"));
+            error(ErrorCode::overflow, F("buffer"));
         }
     }
 };

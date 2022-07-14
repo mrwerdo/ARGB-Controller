@@ -21,6 +21,9 @@ class Connection:
             reflect_out=True
         )
         self.logging_enabled = False
+        self.incoming = 0
+        self.outgoing = 0
+        self.received = bytearray()
     
     def __enter__(self):
         self.serialPort.__enter__()
@@ -47,6 +50,7 @@ class Connection:
         while True:
             if self.serialPort.in_waiting > 0:
                 byte = self.serialPort.read()[0]
+                self.received.append(byte)
                 if byte == 0:
                     if len(buffer) > 0:
                         break
@@ -56,6 +60,7 @@ class Connection:
             print('received too short a buffer')
             return None
         else:
+            self.incoming += 1
             try:
                 msg = decode(buffer)
                 received_crc = msg[-4:]
@@ -67,7 +72,7 @@ class Connection:
                     (crc & 0xFF000000) >> 3*8,
                 ])
                 if received_crc != crc:
-                    print(f'warning: received crc: {received_crc}, expected crc: {crc}')
+                    print(f'warning: received crc: {received_crc.hex("-")}, expected crc: {crc.hex("-")}')
                 self.log(dedent(f'''
                 Received Message:
                     length: {len(buffer)}
@@ -76,9 +81,10 @@ class Connection:
                     received crc: {received_crc.hex('-')}
                     calculated crc: {crc.hex('-')}
                 '''))
+                #print(f'received: {buffer.hex("-")}')
                 return msg[:-4]
             except Exception as error:
-                print(error)
+                print(error, f'incoming: {self.incoming}, outgoing: {self.outgoing}, buffer:', buffer.hex('-'))
                 return None
 
     def send(self, message):
@@ -97,6 +103,7 @@ class Connection:
         self.serialPort.write([0])
         self.serialPort.flush()
         self.log('done')
+        self.outgoing += 1
 
     def sendMessage(self, msg):
         data = msg.SerializeToString()

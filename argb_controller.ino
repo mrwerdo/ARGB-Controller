@@ -45,6 +45,8 @@ extern size_t __malloc_margin;
 extern unsigned int *__malloc_start;
 extern unsigned int *__malloc_end;
 
+static Response greatest_response;
+
 // this function will return the number of bytes currently free in RAM
 int freemem()
 {
@@ -67,6 +69,33 @@ inline uint32_t pack(uint16_t a, uint16_t b)
     result <<= 16;
     result |= b;
     return result;
+}
+
+inline uint32_t packIf(uint32_t existing, uint16_t a, uint16_t b)
+{
+    uint16_t x = existing & 0xFFFF;
+    uint16_t y = (existing >> 16) & 0xFFFF;
+    if (x > a) {
+        a = x;
+    }
+    if (y > b) {
+        b = y;
+    } 
+    uint32_t result = a;
+    result <<= 16;
+    result |= b;
+    return result;
+}
+
+void updateGreatestResponse()
+{
+    greatest_response.which_payload = Response_stack_measurement_tag;
+    greatest_response.payload.stack_measurement.id = 123;
+    greatest_response.payload.stack_measurement.data = packIf(greatest_response.payload.stack_measurement.data, &__data_start, &__data_end);
+    greatest_response.payload.stack_measurement.bss = packIf(greatest_response.payload.stack_measurement.bss, &__bss_start, &__bss_end);
+    greatest_response.payload.stack_measurement.heap = packIf(greatest_response.payload.stack_measurement.heap, __malloc_heap_start, __malloc_heap_end);
+    greatest_response.payload.stack_measurement.heap_gap = packIf(greatest_response.payload.stack_measurement.heap_gap,__brkval, __malloc_margin);
+    greatest_response.payload.stack_measurement.stack = packIf(greatest_response.payload.stack_measurement.stack, SP, RAMEND);
 }
 
 void sendStackMeasurements(int id)
@@ -99,14 +128,18 @@ void setup() {
         connection.processPacket(buffer, size);
     });
 
+    sendStackMeasurements(2);
+
     connection.set_callback([](const Request &message) {
         switch (message.which_payload) {
         case Request_set_light_tag: {
+//                sendStackMeasurements(3);
+                updateGreatestResponse();
                 SetLight set_light = message.payload.set_light;
                 if (animation_controller.update_command(set_light)) {
-                    connection.log(LogCode::set_light, F("sucessfully updated light"));
+                    connection.log(LogCode::set_light, F("sucessfully"));
                 } else {
-                    connection.error(ErrorCode::no_callback_assigned, F("invalid light"));
+                    connection.error(ErrorCode::no_callback_assigned, F("invalid"));
                 }
                 return;
             }
@@ -118,7 +151,7 @@ void setup() {
                 return;
             }
         }
-        connection.error(ErrorCode::unknown_message, F("unknown protobuf message"));
+        connection.error(ErrorCode::unknown_message, F("unknown"));
     });
 
     // The board's bootloader intercepts serial messages until a timeout expires.
@@ -126,6 +159,8 @@ void setup() {
     delay(STARTUP_DELAY);
 
     connection.log(LogCode::ready, F("ARGB Controller Ready"));
+    sendStackMeasurements(4);
+    updateGreatestResponse();
 }
 
 void controller_update()
@@ -141,6 +176,7 @@ void controller_update()
 
 void loop() {
     connection.update();
+    connection.send(greatest_response);
     sendStackMeasurements(1);
     //controller_update();
 }
