@@ -7,9 +7,6 @@
 #include <AceCRC.h>
 #include "messages.pb.h"
 
-void sendStackMeasurements(int id);
-void updateGreatestResponse();
-
 using namespace ace_crc::crc32_nibble;
 
 enum ErrorCode {
@@ -59,7 +56,6 @@ public:
         }
         response.payload.log.description[min(message.length(), 63)] = 0;
         this->send(response);
-        sendStackMeasurements(7);
 
         digitalWrite(STATUS_LED, HIGH);
         delay(200);
@@ -68,7 +64,6 @@ public:
     }
 
     void processPacket(const uint8_t* buffer, size_t size) {
-        //updateGreatestResponse();
         if (size <= 4) {
             // At least the CRC should be there, plus something else.
             error(ErrorCode::too_short, F("message"));
