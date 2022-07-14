@@ -35,7 +35,20 @@ private:
     typedef void (*PacketHandlerFunction)(const Request &message);
     PacketHandlerFunction callback = nullptr;
 
+    static void dispatch(const void * sender, const uint8_t* buffer, size_t size) {
+        ((Connection*)sender)->processPacket(buffer, size);
+    }
+
 public:
+    void initialize() {
+        packetSerial.begin(BAUD_RATE);
+        packetSerial.setPacketHandler(dispatch, this);
+    }
+
+    void set_callback(PacketHandlerFunction callback) {
+        this->callback = callback;
+    }
+
     void error(ErrorCode code, String message) {
         Response response;
         response.which_payload = Response_log_tag;
@@ -91,19 +104,6 @@ public:
         }
     }
 
-    void set_callback(PacketHandlerFunction callback) {
-        this->callback = callback;
-    }
-
-    void initialize(typename PacketSerial_<COBS, 0, BufferSize>::PacketHandlerFunction handler) {
-        packetSerial.begin(BAUD_RATE);
-        // You need to pass a reference to this class's method when calling the method.
-        // auto callback = &[this](const uint8_t* buffer, size_t size) {
-        //     this->processPacket(buffer, size);
-        // };
-        packetSerial.setPacketHandler(handler);
-    }
-
     void send(Response &message) {
         const size_t max_encoded_message_size = 80;
         uint8_t buffer[max_encoded_message_size+4];
@@ -141,7 +141,6 @@ public:
         }
         response.payload.log.description[min(msg.length(), 63)] = 0;
         this->send(response);
-        sendStackMeasurements(6);
     }
 
     void update() {

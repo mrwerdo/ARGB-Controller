@@ -19,6 +19,9 @@ To install FastLED:
     arduino-cli lib install "FastLED"
     arduino-cli lib install SnappyProto
     arduino-cli lib install PacketSerial
+    arduino-cli config init
+    # Set library.enable_unsafe_install to true in the generated config file.
+    arduino-cli lib install --git-url https://github.com/bakercp/PacketSerial.git
     arduino-cli lib install AceCRC
 
 To build protobuf messages:

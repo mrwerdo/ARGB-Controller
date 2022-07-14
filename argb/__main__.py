@@ -1,6 +1,6 @@
 print('ARGB Controller Started...')
 from .coms import *
-from .server import Server
+from .server import Server, Request
 from .stack_measurement import StackMeasurement
 from textwrap import dedent
 import pandas as pd
@@ -33,7 +33,7 @@ class DebugMonitor:
 
     def ready(self, server):
         self.log('ready')
-        self.send_message(server)
+        self.current_time(server)
 
     def send_message(self, server):
         server.set_light(
@@ -64,6 +64,11 @@ class DebugMonitor:
             end_color_alt=(0, 0, 255),
             ahds=(5, 5, 5, 5))
 
+    def current_time(self, server):
+        request = Request()
+        request.current_time_request = True
+        server.connection.sendMessage(request)
+
     def process(self, server, msg):
         # Respond to messages here.
         if msg.HasField('stack_measurement'):
@@ -71,7 +76,7 @@ class DebugMonitor:
             self.stack_measurements.append(StackMeasurement(msg))
         elif msg.HasField('log') and msg.log.id == 2:
             self.log('resending message')
-            self.send_message(server)
+            self.current_time(server)
         else:
             print(msg)
         return len(self.stack_measurements) >= 10

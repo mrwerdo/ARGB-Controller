@@ -128,6 +128,30 @@ void sendStackMeasurements(int id)
     connection.send(response);
 }
 
+void callback(const Request &message) {
+    updateGreatestResponse();
+    switch (message.which_payload) {
+    case Request_set_light_tag: {
+            //sendStackMeasurements(3);
+            SetLight set_light = message.payload.set_light;
+            if (animation_controller.update_command(set_light)) {
+                connection.log(LogCode::set_light, F("sucessfully"));
+            } else {
+                connection.error(ErrorCode::no_callback_assigned, F("invalid"));
+            }
+            return;
+        }
+    case Request_current_time_request_tag: {
+            Response response;
+            response.payload.current_time.timestamp = millis();
+            response.which_payload = Response_current_time_tag;
+            connection.send(response);
+            return;
+        }
+    }
+    connection.error(ErrorCode::unknown_message, F("unknown"));
+}
+
 void setup() {
     pinMode(STATUS_LED, OUTPUT);
     digitalWrite(STATUS_LED, LOW);
@@ -142,41 +166,16 @@ void setup() {
     addLeds<11, 12, 8>().setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
 
-    connection.initialize([](const uint8_t* buffer, size_t size) {
-        // todo: modify library so that this goes away.
-        connection.processPacket(buffer, size);
-    });
-
+    connection.initialize();
+    connection.set_callback(callback);
     sendStackMeasurements(2);
-
-    connection.set_callback([](const Request &message) {
-        switch (message.which_payload) {
-        case Request_set_light_tag: {
-                //sendStackMeasurements(3);
-                updateGreatestResponse();
-                SetLight set_light = message.payload.set_light;
-                if (animation_controller.update_command(set_light)) {
-                    connection.log(LogCode::set_light, F("sucessfully"));
-                } else {
-                    connection.error(ErrorCode::no_callback_assigned, F("invalid"));
-                }
-                return;
-            }
-        case Request_current_time_request_tag: {
-                Response response;
-                response.payload.current_time.timestamp = millis();
-                response.which_payload = Response_current_time_tag;
-                connection.send(response);
-                return;
-            }
-        }
-        connection.error(ErrorCode::unknown_message, F("unknown"));
-    });
 
     // The board's bootloader intercepts serial messages until a timeout expires.
     // Wait for the timeout to expire before sending messages.
     delay(STARTUP_DELAY);
-
+    while (Serial.available() > 0) {
+        Serial.read();
+    }
     connection.log(LogCode::ready, F("ARGB Controller Ready"));
     sendStackMeasurements(4);
     updateGreatestResponse();
@@ -205,6 +204,11 @@ void loop() {
     The board does not continue sending stack measurements, so I think it's safe to say it cannot
     be the first theory. Another observation is that measuring the stack just before a packet is 
     processed seems to prevent any other messages from being sent.
+
+    Okay. What is going on is as follows:
+    1. The stack is being exhausted.
+    2. __malloc_heap_end is set to a value near __malloc_heap_start to signal to the program memory exhaustion.
+    3. The messages are being received part way through which results in out of sync programs.
     */
     connection.update();
     connection.send(greatest_response);
