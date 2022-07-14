@@ -44,6 +44,15 @@ class Connection:
         message.ParseFromString(data)
         return message
 
+    def ignore_until_next_message(self):
+        while True:
+            if self.serialPort.in_waiting > 0:
+                byte = self.serialPort.read()[0]
+                self.received.append(byte)
+                if byte == 0:
+                    break
+            else:
+                sleep(0.1)
     
     def receive(self):
         buffer = bytearray()

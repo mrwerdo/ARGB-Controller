@@ -46,6 +46,7 @@ class Server:
 
     def main(self):
         with self.connection:
+            self.connection.ignore_until_next_message()
             while True:
                 try:
                     msg = self.receiveMessage()

@@ -81,8 +81,6 @@ class StackMeasurementLine {
         StackMeasurementLine() {}
 
         void update() {
-            //packIf(&data, &__data_start, &__data_end);
-            //packIf(&bss, &__bss_start, &__bss_end);
             heap = packIf(heap, __malloc_heap_start, __malloc_heap_end);
             heap_gap = packIf(heap_gap, __brkval, __malloc_margin);
             stack = packIfLessThan(stack, SP, RAMEND);
