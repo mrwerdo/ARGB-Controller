@@ -2,7 +2,7 @@ from serial import Serial
 from cobs.cobs import encode, decode
 from time import sleep
 from pycrc.algorithms import Crc
-from messages_pb2 import Response
+from messages_pb2 import Response, DebugMessage
 from textwrap import dedent
 
 class Connection:
@@ -40,9 +40,14 @@ class Connection:
         data = self.receive()
         if data is None:
             return None
-        message = Response()
-        message.ParseFromString(data)
-        return message
+        try:
+            message = Response()
+            message.ParseFromString(data)
+            return message
+        except:
+            message = DebugMessage()
+            message.ParseFromString(data)
+            return message
 
     def ignore_until_next_message(self):
         while True:

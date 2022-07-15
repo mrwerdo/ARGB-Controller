@@ -14,9 +14,13 @@ typedef struct _CurrentTime {
     int64_t timestamp;
 } CurrentTime;
 
-typedef struct _Log { 
+typedef struct _DebugMessage { 
     int32_t id;
     char description[64];
+} DebugMessage;
+
+typedef struct _Log { 
+    int32_t id;
     bool is_error;
 } Log;
 
@@ -69,21 +73,24 @@ extern "C" {
 #define SetLight_init_default                    {0, 0, 0, 0, 0, 0, 0}
 #define CurrentTime_init_default                 {0}
 #define Request_init_default                     {0, {SetLight_init_default}}
-#define Log_init_default                         {0, "", 0}
+#define Log_init_default                         {0, 0}
+#define DebugMessage_init_default                {0, ""}
 #define StackMeasurement_init_default            {0, 0, 0, 0, 0, 0}
 #define Response_init_default                    {0, {CurrentTime_init_default}}
 #define SetLight_init_zero                       {0, 0, 0, 0, 0, 0, 0}
 #define CurrentTime_init_zero                    {0}
 #define Request_init_zero                        {0, {SetLight_init_zero}}
-#define Log_init_zero                            {0, "", 0}
+#define Log_init_zero                            {0, 0}
+#define DebugMessage_init_zero                   {0, ""}
 #define StackMeasurement_init_zero               {0, 0, 0, 0, 0, 0}
 #define Response_init_zero                       {0, {CurrentTime_init_zero}}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define CurrentTime_timestamp_tag                1
+#define DebugMessage_id_tag                      1
+#define DebugMessage_description_tag             2
 #define Log_id_tag                               1
-#define Log_description_tag                      2
-#define Log_is_error_tag                         3
+#define Log_is_error_tag                         2
 #define SetLight_id_tag                          1
 #define SetLight_range_tag                       2
 #define SetLight_start_color_tag                 3
@@ -129,10 +136,15 @@ X(a, STATIC,   ONEOF,    BOOL,     (payload,current_time_request,payload.current
 
 #define Log_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, INT32,    id,                1) \
-X(a, STATIC,   REQUIRED, STRING,   description,       2) \
-X(a, STATIC,   REQUIRED, BOOL,     is_error,          3)
+X(a, STATIC,   REQUIRED, BOOL,     is_error,          2)
 #define Log_CALLBACK NULL
 #define Log_DEFAULT NULL
+
+#define DebugMessage_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, INT32,    id,                1) \
+X(a, STATIC,   REQUIRED, STRING,   description,       2)
+#define DebugMessage_CALLBACK NULL
+#define DebugMessage_DEFAULT NULL
 
 #define StackMeasurement_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, INT32,    id,                1) \
@@ -158,6 +170,7 @@ extern const pb_msgdesc_t SetLight_msg;
 extern const pb_msgdesc_t CurrentTime_msg;
 extern const pb_msgdesc_t Request_msg;
 extern const pb_msgdesc_t Log_msg;
+extern const pb_msgdesc_t DebugMessage_msg;
 extern const pb_msgdesc_t StackMeasurement_msg;
 extern const pb_msgdesc_t Response_msg;
 
@@ -166,14 +179,16 @@ extern const pb_msgdesc_t Response_msg;
 #define CurrentTime_fields &CurrentTime_msg
 #define Request_fields &Request_msg
 #define Log_fields &Log_msg
+#define DebugMessage_fields &DebugMessage_msg
 #define StackMeasurement_fields &StackMeasurement_msg
 #define Response_fields &Response_msg
 
 /* Maximum encoded size of messages (where known) */
 #define CurrentTime_size                         11
-#define Log_size                                 78
+#define DebugMessage_size                        76
+#define Log_size                                 13
 #define Request_size                             79
-#define Response_size                            80
+#define Response_size                            68
 #define SetLight_size                            77
 #define StackMeasurement_size                    66
 

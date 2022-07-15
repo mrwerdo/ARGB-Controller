@@ -27,8 +27,12 @@ message Request {
 
 message Log {
     required int32 id = 1;
+    required bool is_error = 2;
+}
+
+message DebugMessage {
+    required int32 id = 1;
     required string description = 2;
-    required bool is_error = 3;
 }
 
 message StackMeasurement {

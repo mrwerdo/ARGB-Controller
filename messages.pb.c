@@ -18,6 +18,9 @@ PB_BIND(Request, Request, AUTO)
 PB_BIND(Log, Log, AUTO)
 
 
+PB_BIND(DebugMessage, DebugMessage, AUTO)
+
+
 PB_BIND(StackMeasurement, StackMeasurement, AUTO)
 
 

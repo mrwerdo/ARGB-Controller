@@ -42,9 +42,9 @@ void callback(const Request &message) {
     case Request_set_light_tag: {
             SetLight set_light = message.payload.set_light;
             if (animation_controller.update_command(set_light)) {
-                connection.log(LogCode::set_light, F("sucessfully"));
+                connection.log(LogCode::set_light);
             } else {
-                connection.error(ErrorCode::no_callback_assigned, F("invalid"));
+                connection.error(ErrorCode::no_callback_assigned);
             }
             return;
         }
@@ -56,7 +56,7 @@ void callback(const Request &message) {
             return;
         }
     }
-    connection.error(ErrorCode::unknown_message, F("unknown"));
+    connection.error(ErrorCode::unknown_message);
 }
 
 void setup() {
@@ -74,6 +74,7 @@ void setup() {
 
     connection.initialize();
     connection.set_callback(callback);
+    connection.debug(DebugCode::arbitrary_message, F("initalized"));
 
     // The board's bootloader intercepts serial messages until a timeout expires.
     // Wait for the timeout to expire before sending messages.
@@ -82,7 +83,7 @@ void setup() {
     while (Serial.available() > 0) {
         Serial.read();
     }
-    connection.log(LogCode::ready, F("ARGB Controller Ready"));
+    connection.log(LogCode::ready);
     measurer.update(4);
 }
 
@@ -98,6 +99,7 @@ void controller_update()
 }
 
 void loop() {
+    connection.debug(DebugCode::arbitrary_message, F("loop update"));
     connection.update();
     measurer.update(2);
     measurer.send(connection);

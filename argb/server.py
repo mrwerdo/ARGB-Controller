@@ -1,5 +1,5 @@
 from .coms import Connection
-from messages_pb2 import Request
+from messages_pb2 import Request, DebugMessage
 from time import sleep
 
 def pack_rgb(v):
@@ -61,4 +61,6 @@ class Server:
                         break
                 except KeyboardInterrupt:
                     break
+                except ValueError:
+                    print(msg)
             self.delegate.completed(self)

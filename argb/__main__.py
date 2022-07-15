@@ -1,6 +1,6 @@
 print('ARGB Controller Started...')
 from .coms import *
-from .server import Server, Request
+from .server import Server, Request, DebugMessage
 from .stack_measurement import StackMeasurement
 from textwrap import dedent
 import pandas as pd
