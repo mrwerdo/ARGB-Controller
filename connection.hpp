@@ -9,7 +9,7 @@
 
 using namespace ace_crc::crc32_nibble;
 
-enum ErrorCode {
+enum class ErrorCode : uint8_t {
     overflow = 1,
     too_short = 2,
     invalid_crc = 3,
@@ -19,13 +19,14 @@ enum ErrorCode {
     unknown_message = 7
 };
 
-enum LogCode {
+enum class LogCode : uint8_t {
     set_light = 8,
     ready = 9
 };
 
-enum DebugCode {
-    arbitrary_message = 10
+enum class DebugCode : uint8_t {
+    arbitrary_message = 10,
+    protobuf_decode = 11
 };
 
 template <size_t BufferSize, unsigned long BAUD_RATE, uint8_t STATUS_LED>
@@ -67,33 +68,6 @@ private:
         packetSerial.send(buffer, stream.bytes_written + 4);
     }
 
-public:
-
-    void send(Response message) {
-        send(Response_msg, &message);
-    }
-
-    void initialize() {
-        packetSerial.begin(BAUD_RATE);
-        packetSerial.setPacketHandler(dispatch, this);
-    }
-
-    void set_callback(PacketHandlerFunction callback) {
-        this->callback = callback;
-    }
-
-    void error(ErrorCode code) {
-        Response response;
-        response.which_payload = Response_log_tag;
-        response.payload.log.is_error = true;
-        response.payload.log.id = code;
-        this->send(response);
-        digitalWrite(STATUS_LED, HIGH);
-        delay(200);
-        digitalWrite(STATUS_LED, LOW);
-        delay(200);
-    }
-
     void processPacket(const uint8_t* buffer, size_t size) {
         if (size <= 4) {
             // At least the CRC should be there, plus something else.
@@ -120,6 +94,7 @@ public:
         if (!pb_decode(&stream, Request_fields, &message)) {
             const char* errorMsg = PB_GET_ERROR(&stream);
             error(ErrorCode::protobuf_decode);
+            this->debug(DebugCode::protobuf_decode, errorMsg);
             return;
         }
 
@@ -131,17 +106,44 @@ public:
     }
 
 
+public:
+
+    void send(Response message) {
+        this->send(Response_msg, &message);
+    }
+
+    void initialize() {
+        packetSerial.begin(BAUD_RATE);
+        packetSerial.setPacketHandler(dispatch, this);
+    }
+
+    void set_callback(PacketHandlerFunction callback) {
+        this->callback = callback;
+    }
+
+    void error(ErrorCode code) {
+        Response response;
+        response.which_payload = Response_log_tag;
+        response.payload.log.is_error = true;
+        response.payload.log.id = static_cast<uint8_t>(code);
+        this->send(Response_msg, &response);
+        digitalWrite(STATUS_LED, HIGH);
+        delay(200);
+        digitalWrite(STATUS_LED, LOW);
+        delay(200);
+    }
+
     void log(LogCode code) {
         Response response;
         response.which_payload = Response_log_tag;
-        response.payload.log.id = code;
+        response.payload.log.id = static_cast<uint8_t>(code);
         response.payload.log.is_error = false;
-        this->send(response);
+        this->send(Response_msg, &response);
     }
 
     void debug(DebugCode code, String msg) {
         DebugMessage response;
-        response.id = code;
+        response.id = static_cast<uint8_t>(code);
         for (size_t i = 0; i < min(msg.length(), 64); i += 1) {
             response.description[i] = msg[i];
         }
