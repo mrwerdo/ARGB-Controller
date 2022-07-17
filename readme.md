@@ -32,7 +32,7 @@ $ nanopb_generator messages.proto
 
 To compile the sketch:
 
-    arduino-cli compile --fqbn arduino:avr:uno argb_controller
+    arduino-cli compile --fqbn arduino:avr:uno argb_controller  --build-property="build.extra_flags=-DPB_NO_ERRMSG"
 
 To upload the sketch:
 

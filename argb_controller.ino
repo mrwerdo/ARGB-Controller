@@ -31,7 +31,7 @@ const char * loop_update = "loop update";
 const char * initialized = "initialized";
 
 static AnimationController<4, MAXIMUM_NUMBER_OF_LEDS> animation_controller;
-static Connection<64, BAUD_RATE, STATUS_LED> connection;
+static Connection<80, BAUD_RATE, STATUS_LED> connection;
 static StackMeasurer<4> measurer;
 
 template<uint8_t PIN, uint8_t OFFSET, uint8_t SIZE>
@@ -41,7 +41,6 @@ CLEDController& addLeds() {
 
 void callback(const Request &message) {
     measurer.update(3);
-    measurer.send(connection);
     switch (message.which_payload) {
     case Request_set_light_tag: {
             SetLight set_light = message.payload.set_light;
