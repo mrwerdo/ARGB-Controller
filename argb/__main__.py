@@ -78,8 +78,8 @@ class DebugMonitor:
             self.log('resending message')
             self.current_time(server)
         else:
-            print(msg)
-        return len(self.stack_measurements) >= 10
+            self.log(str(msg))
+        return False # len(self.stack_measurements) >= 10
 
     def completed(self, server):
         self.log('completed')

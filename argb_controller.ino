@@ -27,6 +27,9 @@ FASTLED_USING_NAMESPACE
 #define STATUS_LED 13
 #define FRAMES_PER_SECOND 120
 
+const char * loop_update = "loop update";
+const char * initialized = "initialized";
+
 static AnimationController<4, MAXIMUM_NUMBER_OF_LEDS> animation_controller;
 static Connection<64, BAUD_RATE, STATUS_LED> connection;
 static StackMeasurer<4> measurer;
@@ -37,7 +40,8 @@ CLEDController& addLeds() {
 }
 
 void callback(const Request &message) {
-    measurer.update(1);
+    measurer.update(3);
+    measurer.send(connection);
     switch (message.which_payload) {
     case Request_set_light_tag: {
             SetLight set_light = message.payload.set_light;
@@ -60,7 +64,7 @@ void callback(const Request &message) {
 }
 
 void setup() {
-    measurer.update(3);
+    measurer.update(0);
     pinMode(STATUS_LED, OUTPUT);
     digitalWrite(STATUS_LED, LOW);
 
@@ -74,7 +78,7 @@ void setup() {
 
     connection.initialize();
     connection.set_callback(callback);
-    connection.debug(DebugCode::arbitrary_message, F("initalized"));
+    connection.debug(DebugCode::arbitrary_message, initialized);
 
     // The board's bootloader intercepts serial messages until a timeout expires.
     // Wait for the timeout to expire before sending messages.
@@ -84,7 +88,7 @@ void setup() {
         Serial.read();
     }
     connection.log(LogCode::ready);
-    measurer.update(4);
+    measurer.update(1);
 }
 
 void controller_update()
@@ -99,10 +103,10 @@ void controller_update()
 }
 
 void loop() {
-    connection.debug(DebugCode::arbitrary_message, F("loop update"));
+    connection.debug(DebugCode::arbitrary_message, loop_update);
     connection.update();
     measurer.update(2);
     measurer.send(connection);
-    //controller_update();
+    controller_update();
 }
 

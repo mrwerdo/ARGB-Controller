@@ -9,7 +9,7 @@
 
 using namespace ace_crc::crc32_nibble;
 
-enum class ErrorCode : uint8_t {
+enum ErrorCode : uint8_t {
     overflow = 1,
     too_short = 2,
     invalid_crc = 3,
@@ -19,14 +19,14 @@ enum class ErrorCode : uint8_t {
     unknown_message = 7
 };
 
-enum class LogCode : uint8_t {
+enum LogCode : uint8_t {
     set_light = 8,
     ready = 9
 };
 
-enum class DebugCode : uint8_t {
+enum DebugCode : uint8_t {
     arbitrary_message = 10,
-    protobuf_decode = 11
+    protobuf_error_decode =  11
 };
 
 template <size_t BufferSize, unsigned long BAUD_RATE, uint8_t STATUS_LED>
@@ -94,7 +94,7 @@ private:
         if (!pb_decode(&stream, Request_fields, &message)) {
             const char* errorMsg = PB_GET_ERROR(&stream);
             error(ErrorCode::protobuf_decode);
-            this->debug(DebugCode::protobuf_decode, errorMsg);
+            this->debug(DebugCode::protobuf_error_decode, errorMsg);
             return;
         }
 
@@ -125,7 +125,7 @@ public:
         Response response;
         response.which_payload = Response_log_tag;
         response.payload.log.is_error = true;
-        response.payload.log.id = static_cast<uint8_t>(code);
+        response.payload.log.id = code;
         this->send(Response_msg, &response);
         digitalWrite(STATUS_LED, HIGH);
         delay(200);
@@ -136,18 +136,19 @@ public:
     void log(LogCode code) {
         Response response;
         response.which_payload = Response_log_tag;
-        response.payload.log.id = static_cast<uint8_t>(code);
+        response.payload.log.id = code;
         response.payload.log.is_error = false;
         this->send(Response_msg, &response);
     }
 
-    void debug(DebugCode code, String msg) {
+    void debug(DebugCode code, const char * msg) {
         DebugMessage response;
-        response.id = static_cast<uint8_t>(code);
-        for (size_t i = 0; i < min(msg.length(), 64); i += 1) {
+        response.id = code;
+        size_t length = strlen(msg);
+        for (size_t i = 0; i < min(length, 64); i += 1) {
             response.description[i] = msg[i];
         }
-        response.description[min(msg.length(), 63)] = 0;
+        response.description[min(length, 63)] = 0;
         this->send(DebugMessage_msg, &response);
     }
 

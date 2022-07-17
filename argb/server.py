@@ -62,5 +62,5 @@ class Server:
                 except KeyboardInterrupt:
                     break
                 except ValueError:
-                    print(msg)
+                    print(f'server debug: {msg}')
             self.delegate.completed(self)

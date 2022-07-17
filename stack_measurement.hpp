@@ -107,10 +107,10 @@ class StackMeasurer {
         }
 
         void update(const int id) {
-            if (measurements[id - 1].id == COUNT) {
-                measurements[id - 1].id = id - 1;
+            if (measurements[id].id == COUNT) {
+                measurements[id].id = id;
             }
-            measurements[id - 1].update();
+            measurements[id].update();
         }
 
         template <size_t BufferSize, unsigned long BAUD_RATE, uint8_t STATUS_LED>
