@@ -3,7 +3,6 @@
 
 #include <FastLED.h>
 #include "light.h"
-#include "log.hpp"
 #include "messages.pb.h"
 
 template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
@@ -34,7 +33,10 @@ public:
 
     void update_frames_per_second_statistic(unsigned long current_time);
 
-    inline boolean is_valid_light(uint8_t id) { return id < MAX_LIGHTS; }
+    inline boolean is_valid_light(uint8_t id)
+    {
+        return id < MAX_LIGHTS;
+    }
 
     boolean update_command(SetLight &set_light);
 
@@ -58,17 +60,9 @@ void AnimationController<MAX_LIGHTS, MAX_LEDS>::update_frames_per_second_statist
 }
 
 template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
-Light& AnimationController<MAX_LIGHTS, MAX_LEDS>::operator[](uint8_t index) { return lights[index]; }
-
-template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
-void AnimationController<MAX_LIGHTS, MAX_LEDS>::log_state()
+Light& AnimationController<MAX_LIGHTS, MAX_LEDS>::operator[](uint8_t index)
 {
-    using ::log;
-    log("frames per second", fps, delim::newline);
-    log("number of lights", number_of_lights, delim::newline);
-    for (int i = 0; i < number_of_lights; i += 1) {
-        lights[i].log();
-    }
+    return lights[index];
 }
 
 template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>

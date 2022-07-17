@@ -11,7 +11,6 @@ FASTLED_USING_NAMESPACE
 #include <proto/pb.h>
 
 #include "light.h"
-#include "log.hpp"
 #include "animation_controller.hpp"
 #include "connection.hpp"
 #include "messages.pb.h"

@@ -1,5 +1,4 @@
 #include "light.h"
-#include "log.hpp"
 
 void Light::set_leds(fract16 t)
 {
@@ -51,28 +50,6 @@ void Light::update(const uint32_t& dt)
 
     previous_time = current_time;
 }
-
-void Light::log()
-{
-    Serial.print("Light(");
-    using ::log;
-    log("id", id);
-    log("start", start);
-    log("end", end);
-    log("start_color_A", start_color_A);
-    log("start_color_B", start_color_B);
-    log("end_color_A", end_color_A);
-    log("end_color_B", end_color_B);
-    log("attack", attack);
-    log("hold", hold);
-    log("decay", decay);
-    log("sustain", sustain);
-    log("previous_time", previous_time);
-    log("t", t);
-    log("state", state, delim::newline);
-    Serial.println(")");
-}
-
 
 void Light::reset() {
     this->state = ahds::attack;
