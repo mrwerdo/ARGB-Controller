@@ -9,6 +9,9 @@
 PB_BIND(SetLight, SetLight, AUTO)
 
 
+PB_BIND(Commit, Commit, AUTO)
+
+
 PB_BIND(CurrentTime, CurrentTime, AUTO)
 
 

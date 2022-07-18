@@ -14,6 +14,10 @@ message SetLight {
     required int32 end_color_alt = 7;
 }
 
+message Commit {
+    required int64 timestamp = 1;
+}
+
 message CurrentTime {
     required int64 timestamp = 1;
 }
@@ -22,6 +26,7 @@ message Request {
     oneof payload {
         SetLight set_light = 1;
         bool current_time_request = 2;
+        Commit commit_transaction = 3;
     }
 }
 

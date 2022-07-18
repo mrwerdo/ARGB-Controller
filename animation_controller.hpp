@@ -9,12 +9,19 @@ template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
 class AnimationController {
 private:
     Light lights[MAX_LIGHTS];
+    SetLight staged_lights[MAX_LIGHTS];
 
     uint16_t frames = 0;
     uint16_t fps = 0;
     unsigned long last_fps_timestamp = 0;
 
     CRGB leds[MAX_LEDS];
+    uint64_t commit_update_time = 0;
+    uint64_t last_commit_time = 0;
+    boolean did_update = false;
+
+    void move_buffers();
+    void update_light(SetLight set_light);
 
 public:
     const uint16_t number_of_lights = MAX_LIGHTS;
@@ -28,6 +35,11 @@ public:
         for (uint8_t i = 0; i < MAX_LIGHTS; i += 1) {
             lights[i].leds = leds;
             lights[i].id = i;
+        }
+
+        for (uint8_t i = 0; i < MAX_LIGHTS; i += 1) {
+            staged_lights[i].id = MAX_LIGHTS;
+            staged_lights[i].id = MAX_LIGHTS;
         }
     }
 
@@ -45,6 +57,8 @@ public:
     void log_state();
 
     void update(const uint32_t& dt);
+
+    void set_commit_time(const uint64_t timestamp);
 };
 
 template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
@@ -68,6 +82,14 @@ Light& AnimationController<MAX_LIGHTS, MAX_LEDS>::operator[](uint8_t index)
 template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
 void AnimationController<MAX_LIGHTS, MAX_LEDS>::update(const uint32_t& dt)
 {
+    if (did_update && millis() - last_commit_time >= commit_update_time) {
+        // move staged buffers into the display buffers
+        move_buffers();
+        did_update = false;
+        last_commit_time = millis();
+        commit_update_time = 0;
+    }
+
     for (int i = 0; i < number_of_lights; i += 1) {
         lights[i].update(dt);
     }
@@ -91,6 +113,29 @@ boolean AnimationController<MAX_LIGHTS, MAX_LEDS>::update_command(SetLight &set_
         return false;
     }
 
+    staged_lights[set_light.id] = set_light;
+
+    return true;
+}
+
+template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
+void AnimationController<MAX_LIGHTS, MAX_LEDS>::set_commit_time(uint64_t timestamp)
+{
+    commit_update_time = timestamp;
+    did_update = true;
+}
+
+
+template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
+void AnimationController<MAX_LIGHTS, MAX_LEDS>::update_light(SetLight set_light)
+{
+    uint16_t start = set_light.range >> 16;
+    uint16_t end = set_light.range & 0xFFFF;
+    if (start > end) {
+        start = set_light.range & 0xFFFF;
+        end = set_light.range >> 16;
+    }
+
     Light &light = this->operator[](set_light.id);
     light.start = start;
     light.end = end;
@@ -108,8 +153,18 @@ boolean AnimationController<MAX_LIGHTS, MAX_LEDS>::update_command(SetLight &set_
     light.end_color_B.setColorCode(set_light.end_color_alt);
 
     light.reset();
-
-    return true;
 }
+
+template <uint8_t MAX_LIGHTS, uint16_t MAX_LEDS>
+void AnimationController<MAX_LIGHTS, MAX_LEDS>::move_buffers()
+{
+    for (size_t i = 0; i < MAX_LIGHTS; i += 1) {
+        if (staged_lights[i].id < MAX_LIGHTS) {
+            update_light(staged_lights[i]);
+            staged_lights[i].id = MAX_LIGHTS;
+        }
+    }
+}
+
 
 #endif

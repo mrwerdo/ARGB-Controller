@@ -1,6 +1,7 @@
 from .coms import Connection
 from messages_pb2 import Request, DebugMessage
 from time import sleep
+from traceback import format_exc
 
 def pack_rgb(v):
     a, b, c = v
@@ -38,6 +39,12 @@ class Server:
         message.ahds = pack_ahds(ahds)
         self.connection.sendMessage(request)
 
+    def commit(self, delta):
+        request = Request()
+        message = request.commit_transaction
+        message.timestamp = delta
+        self.connection.sendMessage(request)
+
     def receiveMessage(self):
         if self.connection.serialPort.in_waiting != 0:
             return self.connection.receiveMessage()
@@ -60,6 +67,7 @@ class Server:
                     if should_stop:
                         break
                 except KeyboardInterrupt:
+                    print(format_exc())
                     break
                 except ValueError:
                     print(f'server debug: {msg}')

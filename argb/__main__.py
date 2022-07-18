@@ -36,6 +36,7 @@ class DebugMonitor:
         self.send_message(server)
 
     def send_message(self, server):
+        server.commit(3)
         self.log('set_light 1')
         server.set_light(
             index=0,

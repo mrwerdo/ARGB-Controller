@@ -10,6 +10,10 @@
 #endif
 
 /* Struct definitions */
+typedef struct _Commit { 
+    int64_t timestamp;
+} Commit;
+
 typedef struct _CurrentTime { 
     int64_t timestamp;
 } CurrentTime;
@@ -52,6 +56,7 @@ typedef struct _Request {
     union {
         SetLight set_light;
         bool current_time_request;
+        Commit commit_transaction;
     } payload;
 } Request;
 
@@ -71,6 +76,7 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define SetLight_init_default                    {0, 0, 0, 0, 0, 0, 0}
+#define Commit_init_default                      {0}
 #define CurrentTime_init_default                 {0}
 #define Request_init_default                     {0, {SetLight_init_default}}
 #define Log_init_default                         {0, 0}
@@ -78,6 +84,7 @@ extern "C" {
 #define StackMeasurement_init_default            {0, 0, 0, 0, 0, 0}
 #define Response_init_default                    {0, {CurrentTime_init_default}}
 #define SetLight_init_zero                       {0, 0, 0, 0, 0, 0, 0}
+#define Commit_init_zero                         {0}
 #define CurrentTime_init_zero                    {0}
 #define Request_init_zero                        {0, {SetLight_init_zero}}
 #define Log_init_zero                            {0, 0}
@@ -86,6 +93,7 @@ extern "C" {
 #define Response_init_zero                       {0, {CurrentTime_init_zero}}
 
 /* Field tags (for use in manual encoding/decoding) */
+#define Commit_timestamp_tag                     1
 #define CurrentTime_timestamp_tag                1
 #define DebugMessage_id_tag                      1
 #define DebugMessage_description_tag             2
@@ -106,6 +114,7 @@ extern "C" {
 #define StackMeasurement_stack_tag               6
 #define Request_set_light_tag                    1
 #define Request_current_time_request_tag         2
+#define Request_commit_transaction_tag           3
 #define Response_current_time_tag                1
 #define Response_log_tag                         2
 #define Response_stack_measurement_tag           3
@@ -122,6 +131,11 @@ X(a, STATIC,   REQUIRED, INT32,    end_color_alt,     7)
 #define SetLight_CALLBACK NULL
 #define SetLight_DEFAULT NULL
 
+#define Commit_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, INT64,    timestamp,         1)
+#define Commit_CALLBACK NULL
+#define Commit_DEFAULT NULL
+
 #define CurrentTime_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, INT64,    timestamp,         1)
 #define CurrentTime_CALLBACK NULL
@@ -129,10 +143,12 @@ X(a, STATIC,   REQUIRED, INT64,    timestamp,         1)
 
 #define Request_FIELDLIST(X, a) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload,set_light,payload.set_light),   1) \
-X(a, STATIC,   ONEOF,    BOOL,     (payload,current_time_request,payload.current_time_request),   2)
+X(a, STATIC,   ONEOF,    BOOL,     (payload,current_time_request,payload.current_time_request),   2) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (payload,commit_transaction,payload.commit_transaction),   3)
 #define Request_CALLBACK NULL
 #define Request_DEFAULT NULL
 #define Request_payload_set_light_MSGTYPE SetLight
+#define Request_payload_commit_transaction_MSGTYPE Commit
 
 #define Log_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, INT32,    id,                1) \
@@ -167,6 +183,7 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (payload,stack_measurement,payload.stack_meas
 #define Response_payload_stack_measurement_MSGTYPE StackMeasurement
 
 extern const pb_msgdesc_t SetLight_msg;
+extern const pb_msgdesc_t Commit_msg;
 extern const pb_msgdesc_t CurrentTime_msg;
 extern const pb_msgdesc_t Request_msg;
 extern const pb_msgdesc_t Log_msg;
@@ -176,6 +193,7 @@ extern const pb_msgdesc_t Response_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define SetLight_fields &SetLight_msg
+#define Commit_fields &Commit_msg
 #define CurrentTime_fields &CurrentTime_msg
 #define Request_fields &Request_msg
 #define Log_fields &Log_msg
@@ -184,6 +202,7 @@ extern const pb_msgdesc_t Response_msg;
 #define Response_fields &Response_msg
 
 /* Maximum encoded size of messages (where known) */
+#define Commit_size                              11
 #define CurrentTime_size                         11
 #define DebugMessage_size                        76
 #define Log_size                                 13

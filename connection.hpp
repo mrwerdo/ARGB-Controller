@@ -55,16 +55,16 @@ private:
         buffer[stream.bytes_written+1] = crc_ptr[1];
         buffer[stream.bytes_written+2] = crc_ptr[2];
         buffer[stream.bytes_written+3] = crc_ptr[3];
-        while (Serial.availableForWrite() < 8) {
-            this->update();
-        }
+        //while (Serial.availableForWrite() < 8) {
+        //    this->update();
+        //}
         Serial.write(0);
         Serial.write(0);
         Serial.write(0);
         Serial.write(0);
-        while (Serial.availableForWrite() < stream.bytes_written + 4) {
-            this->update();
-        }
+        //while (Serial.availableForWrite() < stream.bytes_written + 4) {
+        //    this->update();
+        //}
         packetSerial.send(buffer, stream.bytes_written + 4);
     }
 

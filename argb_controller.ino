@@ -50,6 +50,11 @@ void callback(const Request &message) {
             }
             return;
         }
+    case Request_commit_transaction_tag: {
+            Commit commit = message.payload.commit_transaction;
+            animation_controller.set_commit_time(commit.timestamp);
+            return;
+        }
     case Request_current_time_request_tag: {
             Response response;
             response.payload.current_time.timestamp = millis();
