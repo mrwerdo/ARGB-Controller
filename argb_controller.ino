@@ -26,7 +26,6 @@ FASTLED_USING_NAMESPACE
 #define STATUS_LED 13
 #define FRAMES_PER_SECOND 120
 
-const char * loop_update = "loop update";
 const char * initialized = "initialized";
 
 static AnimationController<4, MAXIMUM_NUMBER_OF_LEDS> animation_controller;
@@ -106,7 +105,6 @@ void controller_update()
 }
 
 void loop() {
-    connection.debug(DebugCode::arbitrary_message, loop_update);
     connection.update();
     measurer.update(2);
     measurer.send(connection);
