@@ -142,7 +142,7 @@ class ARGBProtocol(Protocol):
         message.start_color_alt = pack_rgb(start_color_alt)
         message.end_color_alt = pack_rgb(end_color_alt)
         message.ahds = pack_ahds(ahds)
-        self.send_request(message)
+        self.send_request(request)
 
     def send_request(self, msg):
         message = msg.SerializeToString()

@@ -34,7 +34,7 @@ class DebugMonitor:
         self.send_message(server)
 
     def send_message(self, server):
-        server.commit(3)
+        server.commit(5)
         self.log('set_light 1')
         server.set_light(
             index=0,
@@ -55,26 +55,26 @@ class DebugMonitor:
             end_color_alt=(0, 255, 255),
             ahds=(5, 5, 5, 5))
 
-        self.log('set_light 3')
-        server.set_light(
-            index=2,
-            start=12,
-            end=19,
-            start_color=(255, 0, 0),
-            start_color_alt=(255, 255, 0),
-            end_color=(0, 255, 255),
-            end_color_alt=(0, 0, 255),
-            ahds=(5, 5, 5, 5))
+        # self.log('set_light 3')
+        # server.set_light(
+        #     index=2,
+        #     start=12,
+        #     end=19,
+        #     start_color=(255, 0, 0),
+        #     start_color_alt=(255, 255, 0),
+        #     end_color=(0, 255, 255),
+        #     end_color_alt=(0, 0, 255),
+        #     ahds=(5, 5, 5, 5))
+        # server.commit(3)
 
     def current_time(self, server):
         request = Request()
         request.current_time_request = True
-        server.connection.sendMessage(request)
+        server.send_request(request)
 
     def process(self, server, msg):
         # Respond to messages here.
         if msg.HasField('stack_measurement'):
-            #print('.')
             self.stack_measurements.append(StackMeasurement(msg))
         elif msg.HasField('log') and msg.log.id == 2:
             self.log('resending message')

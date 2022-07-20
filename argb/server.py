@@ -45,6 +45,9 @@ class Server:
         message.timestamp = delta
         self.connection.sendMessage(request)
 
+    def send_request(self, msg):
+        self.connection.sendMessage(msg)
+
     def receiveMessage(self):
         if self.connection.serialPort.in_waiting != 0:
             return self.connection.receiveMessage()
