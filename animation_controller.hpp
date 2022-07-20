@@ -32,6 +32,8 @@ public:
     }
 
     AnimationController() {
+        last_commit_time = millis();
+
         for (uint8_t i = 0; i < MAX_LIGHTS; i += 1) {
             lights[i].leds = leds;
             lights[i].id = i;
