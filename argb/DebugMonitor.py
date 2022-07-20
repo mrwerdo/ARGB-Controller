@@ -82,6 +82,9 @@ class DebugMonitor:
         else:
             self.log(str(msg))
         return False #len(self.stack_measurements) >= 10
+    
+    def debug_message(self, server, msg):
+        self.log(msg)
 
     def completed(self, server):
         self.log('completed')
