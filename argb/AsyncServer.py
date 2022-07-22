@@ -1,9 +1,8 @@
 from asyncio import Protocol, get_event_loop
 from serial_asyncio import create_serial_connection
-from cobs.cobs import encode, decode
-from pycrc.algorithms import Crc
-from messages_pb2 import Request, Response, DebugMessage
+from messages_pb2 import Request
 from traceback import format_exc
+from .stream import PacketProcessor
 
 def pack_rgb(v):
     a, b, c = v
@@ -18,14 +17,7 @@ class ARGBProtocol(Protocol):
         self.logging_enabled = True
         self.delegate = None
         self.input_buffer = bytearray()
-        self.crc = Crc(
-            width=32,
-            poly=0x04c11db7,
-            reflect_in=True,
-            xor_in=0xffffffff,
-            xor_out=0xffffffff,
-            reflect_out=True
-        )
+        self.packet = PacketProcessor()
         self.incoming = 0
         self.outgoing = 0
         super().__init__(*args, **kwargs)
@@ -56,25 +48,32 @@ class ARGBProtocol(Protocol):
     def resume_writing(self):
         self.log('resume writing')
 
-    def decode_protobuf(self, data):
-        is_response = True
-        try:
-            message = Response()
-            message.ParseFromString(data)
-        except:
-            is_response = False
-            message = DebugMessage()
-            message.ParseFromString(data)
-
-        if is_response:
+    def process_packet(self, data):
+        result = self.packet.process(data)
+        if result is None:
+            return
+        t, message = result
+        if t == 'Response':
             if message.HasField('log') and message.log.id == 9:
-                self.delegate.ready(self)
+                try:
+                    self.delegate.ready(self)
+                except:
+                    print(format_exc())
             else:
-                should_stop = self.delegate.process(self, message)
+                try:
+                    should_stop = self.delegate.process(self, message)
+                except:
+                    print(format_exc())
                 if should_stop:
                     self.transport.close()
+        elif t == 'DebugMessage':
+            try:
+                self.delegate.debug_message(self, message)
+            except:
+                print(format_exc())
         else:
-            self.delegate.debug_message(self, message)
+            # error, exception
+            print(t, message)
 
     def detect_packets(self):
         start_of_message = None
@@ -86,41 +85,14 @@ class ARGBProtocol(Protocol):
                 buffer = self.input_buffer[start_of_message:index]
                 start_of_message = None
                 drop_up_to = index
-                try:
-                    self.process_packet(buffer)
-                except:
-                    print(format_exc())
+                if len(buffer) > 0:
+                    self.incoming += 1
+                    if len(buffer) <= 4:
+                        self.log('detected message without a crc')
+                    else:
+                        self.process_packet(buffer)
         if drop_up_to is not None:
             self.input_buffer = self.input_buffer[drop_up_to:]
-
-    def process_packet(self, part):
-        if len(part) > 0:
-            self.incoming += 1
-            if len(part) <= 4:
-                self.log('detected message without a crc')
-            else:
-                try:
-                    msg = decode(part)
-                except Exception as error:
-                    self.log(f'{error} incoming: {self.incoming}, outgoing: {self.outgoing}, buffer: {part.hex("-")}')
-                    return
-
-                data, crc = msg[:-4], msg[-4:]
-                if self.check_crc(data, crc):
-                    self.decode_protobuf(data)
-    
-    def check_crc(self, msg, received_crc):
-        crc = self.crc.bit_by_bit(msg)
-        crc = bytes([
-            (crc & 0x000000FF) >> 0*8,
-            (crc & 0x0000FF00) >> 1*8,
-            (crc & 0x00FF0000) >> 2*8,
-            (crc & 0xFF000000) >> 3*8,
-        ])
-        if received_crc != crc:
-            self.log(f'warning: received crc: {received_crc.hex("-")}, expected crc: {crc.hex("-")}')
-            return False
-        return True
 
     def set_light(self,
             index,
@@ -145,11 +117,7 @@ class ARGBProtocol(Protocol):
         self.send_request(request)
 
     def send_request(self, msg):
-        message = msg.SerializeToString()
-        checksum = self.crc.bit_by_bit(message).to_bytes(4, byteorder='little')
-        data = bytearray(message)
-        data.extend(checksum)
-        encoded_data = encode(data)
+        encoded_data = self.packet.encode(msg)
         self.transport.write(encoded_data)
         self.transport.write(b'\x00')
         self.outgoing += 1
