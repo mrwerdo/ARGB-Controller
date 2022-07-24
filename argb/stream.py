@@ -21,7 +21,6 @@ class PacketProcessor:
             return None
         protobuf_payload, crc = msg[:-4], msg[-4:]
         if not self._check_crc(protobuf_payload, crc):
-            print(f'warning: received crc: {received_crc.hex("-")}, expected crc: {crc.hex("-")}')
             return None
         return self._decode_protobuf(protobuf_payload)
 
@@ -49,7 +48,10 @@ class PacketProcessor:
             (crc & 0x00FF0000) >> 2*8,
             (crc & 0xFF000000) >> 3*8,
         ])
-        return received_crc == crc
+        result = received_crc == crc
+        if not result:
+            print(f'warning: received crc: {received_crc.hex("-")}, expected crc: {crc.hex("-")}')
+        return result
 
     def encode(self, msg):
         message = msg.SerializeToString()
